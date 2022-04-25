@@ -44,39 +44,28 @@ class Shelling_calculating:
     def list_agent_is_happy(self):
         try:
             array = []
+            count = 0
             for i in range(0, self.data.size_map, 1):
                 array_temp = []
                 for j in range(0, self.data.size_map, 1):
                     if self.data.Map[i][j] != 1 and self.is_happy(j, i, self.data.Map[i][j]):
                         array_temp.append(True)
+                        count += 1
                     else:
                         array_temp.append(False)
 
                 array.append(array_temp)
-
+            self.data.count_happy = count
             return array
         except:
             gui.show_error("Ошибка при определении 'счастья' у агентов")
 
-    def counting_happy_agent(self):
-        try:
-            array = self.list_agent_is_happy()
-            count = 0
-            for i in range(0, self.data.size_map, 1):
-                for j in range(0, self.data.size_map, 1):
-                    if array[i][j]:
-                        count += 1
-            return count
-        except:
-            gui.show_error("Ошибка при вычислении количества 'счастливых' агентов")
-            return 0
-
-    def list_happy_position(self, type):
+    def list_happy_position(self, number):
         try:
             array = []
             for i in range(0, self.data.size_map, 1):
                 for j in range(0, self.data.size_map, 1):
-                    if self.data.Map[i][j] == 1 and self.is_happy(j, i, type):
+                    if self.data.Map[i][j] == 1 and self.is_happy(j, i, number):
                         array.append([j, i])
 
             return array
@@ -102,8 +91,15 @@ class Shelling_calculating:
             for i in range(len(self.data.graph_list) - 1, self.data.steps + 1, 1):
                 self.data.graph_x.append(i + 1)
                 self.data.graph_list.append(100)
+                self.data.History.append(self.data.Map)
         except:
             gui.show_error("Ошибка при досрочном завершении моделирования")
+
+    def write_result(self, num):
+        self.data.graph_x.append(num + 1)
+        self.list_agent_is_happy()
+        self.data.graph_list.append(100 * self.data.count_happy / self.data.size_population)
+        self.data.History.append(self.data.Map)
 
     def modeling(self, num):
         try:
@@ -115,7 +111,7 @@ class Shelling_calculating:
                         if len(good_position) > 0:
                             random_int = int(random.uniform(0, len(good_position) - 1))
                             self.data.Map[good_position[random_int][1]][good_position[random_int][0]] = \
-                            self.data.Map[i][j]
+                                self.data.Map[i][j]
                             self.data.Map[i][j] = 1
                         else:
                             free = self.list_free_position()
@@ -127,10 +123,7 @@ class Shelling_calculating:
                         if self.data.extra_counting.get() is True:
                             array = self.data.list_agent_is_happy()
 
-            self.data.graph_x.append(num + 1)
-            self.data.count_happy = self.counting_happy_agent()
-            self.data.graph_list.append(100 * self.data.count_happy / self.data.size_population)
-            self.data.History.append(self.data.Map)
+            self.write_result(num)
 
             if self.data.count_happy / self.data.size_population == 1:
                 self.end_modeling()
@@ -144,11 +137,7 @@ class Shelling_calculating:
 
     def start_calc(self):
         if self.data.work_modeling is True:
-            self.data.History.append(self.data.Map)
-            self.data.graph_x.append(0)
-            self.data.count_happy = self.counting_happy_agent()
-            self.data.graph_list.append(100 * self.data.count_happy / self.data.size_population)
-
+            self.write_result(-1)
             for i in range(0, self.data.steps, 1):
                 if self.modeling(i):
                     break
